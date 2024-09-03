@@ -26,6 +26,10 @@ docker inspect -s $largest_container | jq '.[0].SizeRootFs, .[0].SizeRw'
 ## Hit CTRL+ O and Hit yes 
 ## CTRL + X
 
+#If JQ not installed : 
+
+sudo apt-get install jq
+
 #Run
 
 bash NodeRunninngUtilization.sh
