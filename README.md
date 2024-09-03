@@ -4,24 +4,32 @@
 rm NodeRunninngUtilization.sh && nano NodeRunninngUtilization.sh
 ## Copy the followinng code : 
 
-echo "Docker containers sorted by size (descending order):"
-echo "---------------------------------------------------"
+#!/bin/bash
 
-docker ps -as --format "{{.Size}}\t{{.Names}}\t{{.ID}}" | sort -h -r | \
-while read size name id; do
-    echo -e "$size\t$name\t$id"
+echo "Docker containers sorted by size (largest first):"
+echo "------------------------------------------------"
+
+docker ps -as --format "{{.Size}}\t{{.Names}}\t{{.ID}}" | sort -hr | while read size name id
+do
+    # Extract the numeric part of the size
+    size_num=$(echo $size | sed 's/[^0-9.]*//g')
+    
+    # Extract the unit (B, kB, MB, GB)
+    unit=$(echo $size | sed 's/[0-9.]*//g' | sed 's/^(//' | sed 's/)$//')
+    
+    # Convert to GB
+    case $unit in
+        B)  size_gb=$(echo "$size_num / 1024 / 1024 / 1024" | awk '{printf "%.6f", $1}') ;;
+        kB) size_gb=$(echo "$size_num / 1024 / 1024" | awk '{printf "%.6f", $1}') ;;
+        MB) size_gb=$(echo "$size_num / 1024" | awk '{printf "%.6f", $1}') ;;
+        GB) size_gb=$size_num ;;
+        *)  size_gb="0" ;;
+    esac
+    
+    printf "%-15.2f %-20s %-20s\n" $size_gb "$name" "$id"
 done
 
-echo -e "\nContainer with maximum storage usage:"
-echo "-----------------------------------------"
-
-docker ps -as --format "{{.Size}}\t{{.Names}}\t{{.ID}}" | sort -h -r | head -n1
-
-echo -e "\nDetailed storage information for the largest container:"
-echo "-----------------------------------------------------------"
-
-largest_container=$(docker ps -as --format "{{.ID}}" | head -n1)
-docker inspect -s $largest_container | jq '.[0].SizeRootFs, .[0].SizeRw'
+echo -e "\nNote: Sizes are in GB and represent the virtual size of the container."
 
 ## Hit CTRL+ O and Hit yes 
 ## CTRL + X
